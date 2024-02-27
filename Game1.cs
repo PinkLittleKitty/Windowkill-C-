@@ -1,7 +1,8 @@
-﻿using System.Collections.Generic;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System;
+using System.Collections.Generic;
 
 namespace Windowkill
 {
@@ -9,10 +10,10 @@ namespace Windowkill
     {
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
-        private Texture2D playerTexture;
         private Vector2 playerPosition;
         private MouseState prevMouseState;
         private List<Bullet> bullets;
+        private bool isShooting;
 
         public Game1()
         {
@@ -24,59 +25,70 @@ namespace Windowkill
 
         protected override void Initialize()
         {
-
+            // Set player initial position
+            playerPosition = new Vector2(GraphicsDevice.Viewport.Width / 2, GraphicsDevice.Viewport.Height / 2);
             base.Initialize();
         }
 
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-            playerTexture = Content.Load<Texture2D>("player");
-            playerPosition = new Vector2(GraphicsDevice.Viewport.Width / 2, GraphicsDevice.Viewport.Height / 2);
+
+            DrawingUtils.Initialize(GraphicsDevice);
         }
 
         protected override void Update(GameTime gameTime)
         {
             MouseState mouseState = Mouse.GetState();
+
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-           // Player Movement
-           var KeyboardState = Keyboard.GetState();
-           if (KeyboardState.IsKeyDown(Keys.W))
-           {
-               playerPosition.Y -= 5;
-           }
-           if (KeyboardState.IsKeyDown(Keys.S))
-           {
-               playerPosition.Y += 5;
-           }
-           if (KeyboardState.IsKeyDown(Keys.A))
-           {
-               playerPosition.X -= 5;
-           }
-           if (KeyboardState.IsKeyDown(Keys.D))
-           {
-               playerPosition.X += 5;
-           }
+            // Move the player
+            var keyboardState = Keyboard.GetState();
+            if (keyboardState.IsKeyDown(Keys.W))
+                playerPosition.Y -= 5;
+            if (keyboardState.IsKeyDown(Keys.S))
+                playerPosition.Y += 5;
+            if (keyboardState.IsKeyDown(Keys.A))
+                playerPosition.X -= 5;
+            if (keyboardState.IsKeyDown(Keys.D))
+                playerPosition.X += 5;
 
-           if (mouseState.LeftButton == ButtonState.Pressed && prevMouseState.LeftButton == ButtonState.Released)
-           {
+            // Ensure player stays within window bounds
+            playerPosition.X = MathHelper.Clamp(playerPosition.X, 0, GraphicsDevice.Viewport.Width);
+            playerPosition.Y = MathHelper.Clamp(playerPosition.Y, 0, GraphicsDevice.Viewport.Height);
+
+            // Shooting
+            if (mouseState.LeftButton == ButtonState.Pressed && prevMouseState.LeftButton == ButtonState.Released)
+            {
                 ShootBullet(mouseState.Position.ToVector2());
-           }
+            }
 
-           foreach (var bullet in bullets)
-           {
-               bullet.Update();
-           }
+            // Update bullets
+            for (int i = bullets.Count - 1; i >= 0; i--)
+            {
+                Bullet bullet = bullets[i];
+                bullet.Update();
 
-           // Remove the bullets that are out of the screen
-           bullets.RemoveAll(b => !GraphicsDevice.Viewport.Bounds.Contains(b.Position));
+                // Check if bullet hits the window
+                if (!GraphicsDevice.Viewport.Bounds.Contains(bullet.Position))
+                {
 
-           prevMouseState = mouseState;
+                    _graphics.PreferredBackBufferWidth += 10;
+                    _graphics.ApplyChanges();
 
-           base.Update(gameTime);
+                    bullets.RemoveAt(i);
+                }
+            }
+
+            prevMouseState = mouseState;
+
+            base.Update(gameTime);
         }
+
+
+
 
         protected override void Draw(GameTime gameTime)
         {
@@ -84,12 +96,11 @@ namespace Windowkill
 
             _spriteBatch.Begin();
 
-            Vector2 playerScale = new Vector2(0.07f);
+            // Draw the player
+            DrawingUtils.DrawCircle(_spriteBatch, playerPosition, 20, Color.White);
 
-
-            _spriteBatch.Draw(playerTexture, playerPosition, null, Color.White, 0f, Vector2.Zero, playerScale, SpriteEffects.None, 0f);
-
-            foreach (var bullet in bullets)
+            // Draw bullets
+            foreach (Bullet bullet in bullets)
             {
                 bullet.Draw(_spriteBatch);
             }
@@ -102,7 +113,10 @@ namespace Windowkill
         private void ShootBullet(Vector2 targetPosition)
         {
             Vector2 direction = Vector2.Normalize(targetPosition - playerPosition);
-            bullets.Add(new Bullet(playerPosition, direction * 5));
+
+            float bulletRadius = 5;
+
+            bullets.Add(new Bullet(playerPosition, direction * 5, bulletRadius));
         }
     }
 }
