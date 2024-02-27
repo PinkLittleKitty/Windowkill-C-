@@ -71,14 +71,48 @@ namespace Windowkill
                 Bullet bullet = bullets[i];
                 bullet.Update();
 
-                // Check if bullet hits the window
-                if (!GraphicsDevice.Viewport.Bounds.Contains(bullet.Position))
+                if (bullet.Position.X < 0)
                 {
+                    _graphics.PreferredBackBufferWidth += 10;
+                    _graphics.ApplyChanges();
 
+                    playerPosition.X += 10;
+
+
+                    Window.Position = new Point(Window.Position.X - 10, Window.Position.Y);
+
+                    bullets.RemoveAt(i);
+                    break;
+                }
+                else if (bullet.Position.X > GraphicsDevice.Viewport.Width)
+                {
                     _graphics.PreferredBackBufferWidth += 10;
                     _graphics.ApplyChanges();
 
                     bullets.RemoveAt(i);
+                    break;
+                }
+
+                if (bullet.Position.Y < 0)
+                {
+                    _graphics.PreferredBackBufferHeight += 10;
+                    _graphics.ApplyChanges();
+
+                    playerPosition.Y += 10;
+
+
+                    Window.Position = new Point(Window.Position.X, Window.Position.Y - 10);
+
+                    bullets.RemoveAt(i);
+                    break;
+                }
+                else if (bullet.Position.Y > GraphicsDevice.Viewport.Height)
+                {
+                    _graphics.PreferredBackBufferHeight += 10;
+                    _graphics.ApplyChanges();
+
+                    bullets.RemoveAt(i);
+                    break;
                 }
             }
 
