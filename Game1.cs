@@ -10,11 +10,16 @@ namespace Windowkill
     {
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
+
         private Vector2 playerPosition;
+        private Point originalWindowPos;
+
         private MouseState prevMouseState;
         private List<Bullet> bullets;
-        private readonly int WindowExpandAmount = 50;
-        private int shrinkAmountPerFrame = 1; 
+
+        private readonly int WindowExpandAmount = 15;
+        private int shrinkAmountPerFrame = 1;
+        private int frameCount = 0;
 
 
         public Game1()
@@ -27,7 +32,6 @@ namespace Windowkill
 
         protected override void Initialize()
         {
-            // Set player initial position
             playerPosition = new Vector2(GraphicsDevice.Viewport.Width / 2, GraphicsDevice.Viewport.Height / 2);
             base.Initialize();
         }
@@ -35,7 +39,6 @@ namespace Windowkill
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-
             DrawingUtils.Initialize(GraphicsDevice);
         }
 
@@ -120,36 +123,44 @@ namespace Windowkill
 
             prevMouseState = mouseState;
 
-            ShrinkWindow(shrinkAmountPerFrame);
+            if (frameCount % 5 == 0)
+            {
+                ShrinkWindow(shrinkAmountPerFrame);
+            }
+
+            frameCount++;
 
             base.Update(gameTime);
         }
 
         private void ShrinkWindow(int speed)
         {
-            int windowWidth = _graphics.PreferredBackBufferWidth;
-            int windowHeight = _graphics.PreferredBackBufferHeight;
-
             int shrinkAmount = speed;
-
-            if (speed > 1)
+            if (shrinkAmount > 10)
             {
-                shrinkAmount = (int)Math.Sqrt(speed);
+                shrinkAmount = 10 + (shrinkAmount - 10) / 2;
             }
 
-            int newWidth = Math.Max(_graphics.PreferredBackBufferWidth - shrinkAmount, 200);
-            int newHeight = Math.Max(_graphics.PreferredBackBufferHeight - shrinkAmount, 100);
+            // Get distance to each side
+            int leftDist = (int)playerPosition.X;
+            int rightDist = (int)(GraphicsDevice.Viewport.Width - playerPosition.X);
+            int topDist = (int)playerPosition.Y;
+            int bottomDist = (int)(GraphicsDevice.Viewport.Height - playerPosition.Y);
 
+            // Calculate new width and height based on distances
+            int newWidth = leftDist + rightDist - shrinkAmount;
+            int newHeight = topDist + bottomDist - shrinkAmount;
+
+            // Set new size
             _graphics.PreferredBackBufferWidth = newWidth;
             _graphics.PreferredBackBufferHeight = newHeight;
             _graphics.ApplyChanges();
 
-            playerPosition.X = (int)(playerPosition.X * (newWidth / (float)windowWidth));
-            playerPosition.Y = (int)(playerPosition.Y * (newHeight / (float)windowHeight));
-
-            Window.Position = new Point(Window.Position.X + (windowWidth - newWidth) / 2, Window.Position.Y + (windowHeight - newHeight) / 2);
+            // Adjust position
+            int xOffset = leftDist - shrinkAmount / 2;
+            int yOffset = topDist - shrinkAmount / 2;
+            Window.Position = new Point(xOffset, yOffset);
         }
-
 
         protected override void Draw(GameTime gameTime)
         {
