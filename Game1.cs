@@ -13,7 +13,9 @@ namespace Windowkill
         private Vector2 playerPosition;
         private MouseState prevMouseState;
         private List<Bullet> bullets;
-        private bool isShooting;
+        private readonly int WindowExpandAmount = 50;
+        private int shrinkAmountPerFrame = 1; 
+
 
         public Game1()
         {
@@ -73,20 +75,20 @@ namespace Windowkill
 
                 if (bullet.Position.X < 0)
                 {
-                    _graphics.PreferredBackBufferWidth += 10;
+                    _graphics.PreferredBackBufferWidth += WindowExpandAmount;
                     _graphics.ApplyChanges();
 
-                    playerPosition.X += 10;
+                    playerPosition.X += WindowExpandAmount;
 
 
-                    Window.Position = new Point(Window.Position.X - 10, Window.Position.Y);
+                    Window.Position = new Point(Window.Position.X - WindowExpandAmount, Window.Position.Y);
 
                     bullets.RemoveAt(i);
                     break;
                 }
                 else if (bullet.Position.X > GraphicsDevice.Viewport.Width)
                 {
-                    _graphics.PreferredBackBufferWidth += 10;
+                    _graphics.PreferredBackBufferWidth += WindowExpandAmount;
                     _graphics.ApplyChanges();
 
                     bullets.RemoveAt(i);
@@ -95,20 +97,20 @@ namespace Windowkill
 
                 if (bullet.Position.Y < 0)
                 {
-                    _graphics.PreferredBackBufferHeight += 10;
+                    _graphics.PreferredBackBufferHeight += WindowExpandAmount;
                     _graphics.ApplyChanges();
 
-                    playerPosition.Y += 10;
+                    playerPosition.Y += WindowExpandAmount;
 
 
-                    Window.Position = new Point(Window.Position.X, Window.Position.Y - 10);
+                    Window.Position = new Point(Window.Position.X, Window.Position.Y - WindowExpandAmount);
 
                     bullets.RemoveAt(i);
                     break;
                 }
                 else if (bullet.Position.Y > GraphicsDevice.Viewport.Height)
                 {
-                    _graphics.PreferredBackBufferHeight += 10;
+                    _graphics.PreferredBackBufferHeight += WindowExpandAmount;
                     _graphics.ApplyChanges();
 
                     bullets.RemoveAt(i);
@@ -118,10 +120,35 @@ namespace Windowkill
 
             prevMouseState = mouseState;
 
+            ShrinkWindow(shrinkAmountPerFrame);
+
             base.Update(gameTime);
         }
 
+        private void ShrinkWindow(int speed)
+        {
+            int windowWidth = _graphics.PreferredBackBufferWidth;
+            int windowHeight = _graphics.PreferredBackBufferHeight;
 
+            int shrinkAmount = speed;
+
+            if (speed > 1)
+            {
+                shrinkAmount = (int)Math.Sqrt(speed);
+            }
+
+            int newWidth = Math.Max(_graphics.PreferredBackBufferWidth - shrinkAmount, 200);
+            int newHeight = Math.Max(_graphics.PreferredBackBufferHeight - shrinkAmount, 100);
+
+            _graphics.PreferredBackBufferWidth = newWidth;
+            _graphics.PreferredBackBufferHeight = newHeight;
+            _graphics.ApplyChanges();
+
+            playerPosition.X = (int)(playerPosition.X * (newWidth / (float)windowWidth));
+            playerPosition.Y = (int)(playerPosition.Y * (newHeight / (float)windowHeight));
+
+            Window.Position = new Point(Window.Position.X + (windowWidth - newWidth) / 2, Window.Position.Y + (windowHeight - newHeight) / 2);
+        }
 
 
         protected override void Draw(GameTime gameTime)

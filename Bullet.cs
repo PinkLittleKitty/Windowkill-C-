@@ -7,7 +7,7 @@ namespace Windowkill
     {
         public Vector2 Position { get; set; }
         public Vector2 Velocity { get; set; }
-        private float radius;
+        public float radius;
 
         public Bullet(Vector2 position, Vector2 velocity, float radius)
         {
